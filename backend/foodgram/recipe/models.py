@@ -1,14 +1,10 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
+from users.models import User
 
 from django.db import models
-from django.contrib.auth import get_user_model 
 from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 
-User = get_user_model()
 # Create your models here.
 class Tag(models.Model):
     title = models.CharField(max_length=256)
