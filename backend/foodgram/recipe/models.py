@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-
+from django.db.models import Q, F
 from django.db import models
 from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
@@ -44,7 +44,6 @@ class Recipes(models.Model):
                                    verbose_name="Описание рецепта")
     ingredients = models.ManyToManyField(Ingredient,
                                          through='IngredientRecipes',
-                                         blank=True,
                                          verbose_name='Ингредиенты')
     tags = models.ManyToManyField(Tag, related_name='recipes')
 
@@ -79,3 +78,85 @@ class IngredientRecipes(models.Model):
     
     def __str__(self):
         return f'{self.recipe} {self.ingredient}'
+
+class Follow(models.Model):
+    """
+    Подписки на авторов рецептов.
+    """
+    user = models.ForeignKey(
+        User,
+        verbose_name='Пользователь',
+        related_name='follower',
+        on_delete=models.CASCADE)
+    
+    author = models.ForeignKey(
+        User,
+        verbose_name='Подписка',
+        related_name='followed',
+        on_delete=models.CASCADE)
+
+    class Meta:
+        """
+        Пользователь может только 1 раз подписаться на автора.
+        Нельзя подписаться на самого себя, оператор F достаёт текущю запись поля author.
+        """
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='Уникальная подписка'),
+            models.CheckConstraint(
+                check=~Q(user=F('author')),
+                name='Запрет самоподписки')]
+
+
+class Favorite(models.Model):
+    """
+    Любимые рецепты пользователя
+    """
+    author = models.ForeignKey(
+        User,
+        related_name='favorite',
+        on_delete=models.CASCADE,
+        verbose_name='Автор рецепта')
+    
+    recipes = models.ForeignKey(
+        Recipes,
+        on_delete=models.CASCADE,
+        verbose_name='Рецепты')
+
+    class Meta:
+        """
+        Нельзя добавлять в любимые один и тот же рецепт несколько раз
+        """
+        verbose_name = 'Любимые рецепты'
+        verbose_name_plural = 'Любимые рецепты'
+        constraints = [models.UniqueConstraint(
+            fields=['author', 'recipes'],
+            name='Уникальность любимых рецептов')]
+
+    def __str__(self):
+        return f'{self.recipes}'
+
+
+class List_Of_Purchases(models.Model):
+    author = models.ForeignKey(
+        User,
+        related_name='purchases',
+        on_delete=models.CASCADE,
+        verbose_name='Автор')
+    recipe = models.ForeignKey(
+        Recipes,
+        related_name='purschases',
+        verbose_name='Рецепт',
+        on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Список покупок'
+        constraints = [models.UniqueConstraint(
+            fields=['author', 'recipe'],
+            name='уникальные покупки')]
+
+    def __str__(self):
+        return f'{self.recipe}'
