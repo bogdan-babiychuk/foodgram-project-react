@@ -8,12 +8,6 @@ USER_ROLE_MAX_LEN = 10
 
 class User(AbstractUser):
     """Модель пользователя"""
-    USER = 'user'
-    ADMIN = 'admin'
-    CHOICES = [
-        (USER, 'Пользователь'),
-        (ADMIN, 'Админ')
-    ]
 
     username = models.CharField(
         verbose_name='Логин',
@@ -27,12 +21,6 @@ class User(AbstractUser):
         unique=True
     ) 
 
-    role = models.CharField(
-        verbose_name='Роль',
-        choices=CHOICES,
-        default=USER,
-        max_length=USER_ROLE_MAX_LEN
-    )
 
     first_name = models.CharField(verbose_name='Имя',
                                   max_length=150,
@@ -44,17 +32,14 @@ class User(AbstractUser):
 
     password = models.CharField(max_length=150, verbose_name='Пароль')
 
-    
+    USERNAME_FIELD = ('email')
 
-    REQUIRED_FIELDS = ['password', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ('password', 'first_name', 'last_name', 'username')
 
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
-    @property
-    def admin(self):
-        return self.role == self.ADMIN
 
     def __str__(self):
         return self.username

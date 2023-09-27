@@ -5,8 +5,7 @@ from django.contrib import admin
 from django.template.loader import get_template
 from django.utils.safestring import mark_safe
 from .models import Tag, Recipes, Ingredient
-# Register your models here.
-admin.site.register(Tag)  
+# Register your models here. 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
@@ -21,10 +20,10 @@ class IngredientRecipesInline(admin.TabularInline):
 @admin.register(Recipes)
 class RecipesAdmin(admin.ModelAdmin):
     inlines = (IngredientRecipesInline,)
-    list_display = ('id', 'author', 'title')
-    list_display_links = ('title',)
-    fields = ('author', 'title', 'tags', 'ingredient', 'description', 'cooking_time', 'image')
-    list_filter = ('author', 'title', 'tags')
+    list_display = ('id', 'author', 'name')
+    list_display_links = ('name',)
+    fields = ('author', 'name', 'tags', 'ingredient', 'description', 'cooking_time', 'image')
+    list_filter = ('author', 'name', 'tags')
     readonly_fields = ('ingredient',)
 
 
@@ -45,3 +44,4 @@ class RecipesAdmin(admin.ModelAdmin):
 
 admin.site.site_title = 'Administration Foodgram'
 admin.site.site_header = 'Foodgram Admin Panel'
+admin.site.register(Tag) 

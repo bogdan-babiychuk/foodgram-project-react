@@ -8,7 +8,7 @@ class UserAdmin(admin.ModelAdmin):
     Админ-зона пользователя.
     """
     list_display = ('id', 'username', 'first_name',
-                    'last_name', 'email', 'role', 'admin')
+                    'last_name', 'email',)
     
     search_fields = ('username', 'email')
     list_filter = ('username', 'email',)

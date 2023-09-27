@@ -2,13 +2,13 @@ from rest_framework import serializers
 from .models import User
 from recipe.models import Follow
 
-class CustomUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'first_name', 'last_name',)
+        fields = ('id', 'email', 'username', 'first_name', 'last_name',)
 
-class CustomUserCreateSerializer(serializers.ModelSerializer):
+class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     
     class Meta:

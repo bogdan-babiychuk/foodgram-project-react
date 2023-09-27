@@ -1,11 +1,14 @@
 from django.db import models
 from users.models import User
-from django.db.models import Q, F
-from django.db import models
+from django.db.models import (
+    Q,
+    F,
+    UniqueConstraint,
+    CheckConstraint
+    )
 from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 
-# Create your models here.
 class Tag(models.Model):
     title = models.CharField(max_length=256)
     color = ColorField()
@@ -34,13 +37,13 @@ class Ingredient(models.Model):
 class Recipes(models.Model):
     author = models.ForeignKey(User,
                                on_delete=models.CASCADE,
-                               related_name='recipes',
+                               related_name='recipe',
                                verbose_name='Автор')
     
-    title = models.CharField(max_length=256, verbose_name="Название рецепта")
-    image = models.ImageField(upload_to= 'recipts/')
+    name  = models.CharField(max_length=256, verbose_name="Название рецепта")
+    image = models.ImageField(upload_to= 'media/')
 
-    description = models.TextField(blank=True,
+    text = models.TextField(blank=True,
                                    verbose_name="Описание рецепта")
     ingredients = models.ManyToManyField(Ingredient,
                                          through='IngredientRecipes',
@@ -56,7 +59,7 @@ class Recipes(models.Model):
         verbose_name_plural = 'Рецепты'
 
     def __str__(self):
-        return self.title
+        return self.name
 
 class IngredientRecipes(models.Model):
     recipe = models.ForeignKey(Recipes,
@@ -103,10 +106,11 @@ class Follow(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
-            models.UniqueConstraint(
+                UniqueConstraint(
                 fields=['user', 'author'],
                 name='Уникальная подписка'),
-            models.CheckConstraint(
+
+                CheckConstraint(
                 check=~Q(user=F('author')),
                 name='Запрет самоподписки')]
 
@@ -132,7 +136,7 @@ class Favorite(models.Model):
         """
         verbose_name = 'Любимые рецепты'
         verbose_name_plural = 'Любимые рецепты'
-        constraints = [models.UniqueConstraint(
+        constraints = [UniqueConstraint(
             fields=['author', 'recipes'],
             name='Уникальность любимых рецептов')]
 
@@ -154,7 +158,7 @@ class List_Of_Purchases(models.Model):
 
     class Meta:
         verbose_name = 'Список покупок'
-        constraints = [models.UniqueConstraint(
+        constraints = [UniqueConstraint(
             fields=['author', 'recipe'],
             name='уникальные покупки')]
 
