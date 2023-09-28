@@ -6,10 +6,8 @@ from recipe .models import (List_Of_Purchases,
                            Tag,)
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from django.shortcuts import get_object_or_404
 from api.helper import BaseRecipeSerializer, create_ingredients
 from users.serializers import UserSerializer
-from django.db import transaction
 
 class IngredientSerializer(serializers.ModelSerializer):
     """
@@ -120,14 +118,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         if not ingredients:
             return []
 
-        ingredients_list = set()
+        ingredients_list = []
         for item in ingredients:
             ingredient_id = item.get('id')
             if not ingredient_id:
                 raise serializers.ValidationError({'ingredients': 'Каждый ингредиент должен иметь ID!'})
 
             try:
-                ingredient = Ingredient.objects.get(id=ingredient_id)
+                ingredient = Ingredient.objects.get(id=ingredient_id) #получение ингредиента
             except Ingredient.DoesNotExist:
                 raise serializers.ValidationError({'ingredients': f'Ингредиент с ID {ingredient_id} не существует!'})
 
@@ -142,7 +140,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         tags = value
         if not tags:
             raise serializers.ValidationError(
-                {'tags': 'Нужно выбрать тег!'})
+                {'tags': 'Нельзя создать рецепт без тега!'})
         tags_list = []
         for tag in tags:
             if tag in tags_list:
@@ -176,19 +174,16 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     
 
     def to_representation(self, instance): 
-        return RecipeReadSerializer(instance, context={ 
-            'request': self.context.get('request') 
-
-        }).data 
+        return RecipeReadSerializer(instance, context={ 'request': self.context.get('request')}).data 
     
 class FavoriteSerializer(BaseRecipeSerializer):
     """Сериализатор модели Favorite"""
     class Meta:
         model = Favorite
-        fields = ('id', 'title', 'image', 'cooking_time')
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 class List_Of_PurchasesSerializer(BaseRecipeSerializer):
-    """Сериализатор модели Favorite"""
+    """Сериализатор модели List_Of_Purchases"""
     class Meta:
         model = List_Of_Purchases
-        fields = ('id', 'title', 'image', 'cooking_time')
+        fields = ('id', 'name', 'image', 'cooking_time')

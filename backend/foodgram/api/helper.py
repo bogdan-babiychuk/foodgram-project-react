@@ -8,9 +8,9 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         read_only=True,
         source='recipes.id',)
-    title = serializers.ReadOnlyField(
+    name = serializers.ReadOnlyField(
         read_only=True,
-        source='recipes.title',)
+        source='recipes.name',)
     image = serializers.ImageField(
         read_only=True,
         source='recipes.image',)

@@ -119,7 +119,7 @@ class Favorite(models.Model):
     """
     Любимые рецепты пользователя
     """
-    author = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         related_name='favorite',
         on_delete=models.CASCADE,
@@ -145,7 +145,8 @@ class Favorite(models.Model):
 
 
 class List_Of_Purchases(models.Model):
-    author = models.ForeignKey(
+    """Модель списка покупок"""
+    user = models.ForeignKey(
         User,
         related_name='purchases',
         on_delete=models.CASCADE,
