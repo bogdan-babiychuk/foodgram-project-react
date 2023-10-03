@@ -33,7 +33,7 @@ class CustomUserViewSet(UserViewSet):
                         'error': 'Нельзя подписаться повторно'
                     })
                 serializer_data = FollowSerializer(
-                    author, context={'request': request, }
+                    author, context={'request': request}
                 )
 
                 return Response({'Вы подписались': serializer_data.data},
