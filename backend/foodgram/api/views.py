@@ -1,10 +1,18 @@
-from recipe .models import (List_Of_Purchases, IngredientRecipes,
-                            Ingredient, Favorite, Recipes, Tag,)
+from recipe.models import (
+    List_Of_Purchases,
+    IngredientRecipes,
+    Ingredient,
+    Favorite,
+    Recipes,
+    Tag,
+)
 
-from .serializers import (IngredientSerializer,
-                          RecipeReadSerializer,
-                          RecipeWriteSerializer,
-                          TagSerializer,)
+from .serializers import (
+    IngredientSerializer,
+    RecipeReadSerializer,
+    RecipeWriteSerializer,
+    TagSerializer,
+)
 
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
@@ -58,15 +66,17 @@ class RecipesViewSet(viewsets.ModelViewSet):
         """Добавление/удаление из избранного.
         Находим в базе рецепт, пытаемся создать пару
         рецепта и пользователя, если прошло всю проверку,
-        то возврощаем данные с помощью Вспомогательного сериализатора
+        то возвращаем данные с помощью Вспомогательного сериализатора
         FavoriteFollowSerializer
         В удаление, если есть пара юзера и рецепта, то только в таком
         случае можно убрать из избранного.
         """
         user = request.user
         if not user.is_authenticated:
-            return Response({"favorites": "Нужно войти либо создать аккаунт"},
-                            status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"favorites": "Нужно войти либо создать аккаунт"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         recipe = get_object_or_404(Recipes, id=pk)
         obj, created = Favorite.objects.get_or_create(user=user, recipe=recipe)
 
@@ -87,20 +97,22 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 recipe.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                {"favorites": "Добавте рецепт в избранное"},
+                {"favorites": "Добавьте рецепт в избранное"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
     @action(detail=True, methods=["post", "delete"])
     def shopping_cart(self, request, pk):
-        """Та же логика работы, что и при добавление в избранное"""
+        """Та же логика работы, что и при добавлении в избранное"""
         user = request.user
         if not user.is_authenticated:
-            return Response({"shopping_cart": "Требуется аутентификация"},
-                            status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"shopping_cart": "Требуется аутентификация"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         recipe = get_object_or_404(Recipes, id=pk)
         cart, created = List_Of_Purchases.objects.get_or_create(
-                                                user=user, recipe=recipe)
+            user=user, recipe=recipe)
 
         if request.method == "POST":
             if not created:
@@ -109,15 +121,15 @@ class RecipesViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             serializer = FavoriteFollowSerializer(
-                                        recipe, context={'request': request})
+                recipe, context={'request': request})
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == "DELETE":
             if List_Of_Purchases.objects.filter(
-                            user=user, recipe__id=pk).exists():
+                    user=user, recipe__id=pk).exists():
                 List_Of_Purchases.objects.filter(
-                            user=user, recipe__id=pk).delete()
+                    user=user, recipe__id=pk).delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
                 {"shopping_cart": "Рецепт не найден в корзине"},
@@ -142,11 +154,10 @@ class RecipesViewSet(viewsets.ModelViewSet):
             for ingredient in ingredients
         ]
 
-        '''Создаем текстовый документ с информацией о покупках
-        здесь flake8 не даёт нормально поставить, имя пользователя
-        и email чтобы это нормлаьно выглядело в файле.'''
-        user_info = f'''
-        Пользователь: {request.user.username} ({request.user.email})'''
+        # Создаем текстовый документ с информацией о покупках
+        user_info = (
+            f'Пользователь: {request.user.username} ({request.user.email})'
+        )
         date_info = f"Дата: {today:%Y-%m-%d}"
         purchases_text = "\n".join([user_info, date_info] + purchases_info)
 
