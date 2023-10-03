@@ -5,7 +5,7 @@ from django.db.models import (
     F,
     UniqueConstraint,
     CheckConstraint
-    )
+)
 from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 

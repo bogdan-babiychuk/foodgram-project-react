@@ -27,7 +27,7 @@ class RecipesAdmin(admin.ModelAdmin):
     def ingredient(self, *args, **kwargs):
         context = getattr(self.response, 'context_data', None) or {}
         inline = context['inline_admin_formset'] = context[
-                        'inline_admin_formsets'].pop(0)
+                         'inline_admin_formsets'].pop(0)
         return get_template(inline.opts.template).render(context, self.request)
 
     def render_change_form(self, request, *args, **kwargs):
