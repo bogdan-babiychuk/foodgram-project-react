@@ -1,42 +1,49 @@
 from rest_framework import serializers
 from .models import User
 from recipe.models import Follow, Recipes
-from api.helper import BaseRecipeSerializer
+
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализтор для юзера"""
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name',)
+        fields = ('id', 'email', 'username',
+                  'first_name', 'last_name', 'is_subscribed')
 
-    def is_subscribed(self, obj):
+    def get_is_subscribed(self, obj):
         """Подписан или нет"""
         user = self.context.get('request').user
         if not user.is_anonymous:
-            return user.follower.filter(author=obj).exists()
+            # Проверяем, что пользователь не подписан на самого себя
+            if user != obj:
+                return Follow.objects.filter(user=user, author=obj).exists()
         return False
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания пользователя, с уникальным полем password"""
     password = serializers.CharField(write_only=True)
-    
+
     class Meta:
         model = User
         fields = ('email', 'username', 'first_name', 'last_name', 'password')
-    
+
     def create(self, validated_data):
         password = validated_data.pop('password')
-        user = User(**validated_data)
+        user = User.objects.create(**validated_data)
         user.set_password(password)
         user.save()
         return user
-    
 
-class FavoriteFollowSerializer(BaseRecipeSerializer):
+
+class FavoriteFollowSerializer(serializers.ModelSerializer):
     """api/helper.py"""
     class Meta:
         model = Recipes
         fields = ('id', 'name', 'image', 'cooking_time')
+
 
 class FollowSerializer(serializers.ModelSerializer):
     """Сериализатор Модели Follow"""
@@ -48,29 +55,32 @@ class FollowSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = User
         fields = ('id', 'email',
                   'username', 'first_name',
-                  'last_name', 'is_sibscribed',
+                  'last_name', 'is_subscribed',
                   'recipes', 'recipes_count')
-    
+
     def get_is_subscribed(self, obj):
+        """Подписан или нет"""
         user = self.context.get('request').user
         if not user.is_anonymous:
-            return user.follower.filter(author=obj).exists()
+            # Проверяем, что пользователь не подписан на самого себя
+            if user != obj:
+                return Follow.objects.filter(user=user, author=obj).exists()
         return False
 
     def get_recipes(self, obj):
-        """Этот метод вообще не понимаю, но мне сказали его добавить в пачке"""
+        """Получение рецептов автора, на которого подписан пользователь"""
         request = self.context.get('request')
         limit = request.GET.get('recipes_limit')
-        recipes = Recipes.objects.filter(author=obj.author)
-        if limit and limit.isdigit():
+        recipes = obj.recipe.all()
+        if limit:
             recipes = recipes[:int(limit)]
         serializer = FavoriteFollowSerializer(recipes, many=True)
         return serializer.data
-    
+
     def get_recipes_count(self, obj):
-        return Recipes.objects.filter(author=obj.author).count()
+        return Recipes.objects.filter(author=obj).count()

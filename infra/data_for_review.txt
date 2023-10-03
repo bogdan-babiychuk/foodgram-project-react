@@ -1,0 +1,5 @@
+repo_owner: bogdan-babiychuk
+domain: https://foodgrams.ddnsking.com/
+dockerhub_username: babiychukbogdan
+Электронная почта для суперюзера: test@mail.ru
+Пароль для суперюзера: 243245

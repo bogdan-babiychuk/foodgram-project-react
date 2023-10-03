@@ -1,23 +1,162 @@
-from recipe .models import Ingredient, IngredientRecipes, Recipes, Tag
-from .serializers import IngredientSerializer, TagSerializer,  RecipeReadSerializer, RecipeWriteSerializer
+from recipe .models import (List_Of_Purchases, IngredientRecipes,
+                            Ingredient, Favorite, Recipes, Tag,)
+
+from .serializers import (IngredientSerializer,
+                          RecipeReadSerializer,
+                          RecipeWriteSerializer,
+                          TagSerializer,)
+
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from .paginations import RecipesPagination
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+from api.permissions import IsAuthorOrAdminOrReadOnly
+from .filters import RecipeFilter, IngredientFilter
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import action
+from django.db.models import Sum
+from django.http import HttpResponse
+from datetime import datetime
+from users.serializers import FavoriteFollowSerializer
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+
+class IngredientViewSet(ListModelMixin, RetrieveModelMixin,
+                        viewsets.GenericViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    filter_backends = (IngredientFilter,)
+    search_fields = ("^name",)
+    pagination_class = None
 
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
+
+class TagViewSet(ListModelMixin, RetrieveModelMixin,
+                 viewsets.GenericViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    pagination_class = None
 
-class RecipesViewSet(viewsets.ModelViewSet): 
+
+class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
+    permission_classes = (IsAuthorOrAdminOrReadOnly,)
+    pagination_class = RecipesPagination
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = RecipeFilter
 
-    def get_serializer_class(self): 
-        if self.request.method in SAFE_METHODS: 
-            return RecipeReadSerializer 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return RecipeReadSerializer
         return RecipeWriteSerializer
+
+    @action(detail=True, methods=["post", "delete"])
+    def favorite(self, request, pk):
+        """Добавление/удаление из избранного.
+        Находим в базе рецепт, пытаемся создать пару
+        рецепта и пользователя, если прошло всю проверку,
+        то возврощаем данные с помощью Вспомогательного сериализатора
+        FavoriteFollowSerializer
+        В удаление, если есть пара юзера и рецепта, то только в таком
+        случае можно убрать из избранного.
+        """
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"favorites": "Нужно войти либо создать аккаунт"},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        recipe = get_object_or_404(Recipes, id=pk)
+        obj, created = Favorite.objects.get_or_create(user=user, recipe=recipe)
+
+        if request.method == "POST":
+            if not created:
+                return Response(
+                    {"favorites": "Рецепт уже добавлен в избранное"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            serializer = FavoriteFollowSerializer(
+                recipe, context={'request': request})
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if request.method == "DELETE":
+            recipe = Favorite.objects.filter(user=user, recipe__id=pk)
+            if recipe.exists():
+                recipe.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                {"favorites": "Добавте рецепт в избранное"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=["post", "delete"])
+    def shopping_cart(self, request, pk):
+        """Та же логика работы, что и при добавление в избранное"""
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"shopping_cart": "Требуется аутентификация"},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        recipe = get_object_or_404(Recipes, id=pk)
+        cart, created = List_Of_Purchases.objects.get_or_create(
+                                                user=user, recipe=recipe)
+
+        if request.method == "POST":
+            if not created:
+                return Response(
+                    {"shopping_cart": "Рецепт уже добавлен в корзину"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            serializer = FavoriteFollowSerializer(
+                                        recipe, context={'request': request})
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if request.method == "DELETE":
+            if List_Of_Purchases.objects.filter(
+                            user=user, recipe__id=pk).exists():
+                List_Of_Purchases.objects.filter(
+                            user=user, recipe__id=pk).delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                {"shopping_cart": "Рецепт не найден в корзине"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, permission_classes=[IsAuthenticated])
+    def download_shopping_cart(self, request):
+        # Получаем ингредиенты и их сумму для покупок пользователя
+        ingredients = (
+            IngredientRecipes.objects
+            .filter(recipe__purchases__user=request.user)
+            .values("ingredient__name", "ingredient__units")
+            .annotate(amount=Sum("amount"))
+        )
+
+        # Создаем строку с информацией о покупках
+        today = datetime.today()
+        purchases_info = [
+            f'- {ingredient["ingredient__name"]} - {ingredient["amount"]} '
+            f'{ingredient["ingredient__units"]}'
+            for ingredient in ingredients
+        ]
+
+        '''Создаем текстовый документ с информацией о покупках
+        здесь flake8 не даёт нормально поставить, имя пользователя
+        и email чтобы это нормлаьно выглядело в файле.'''
+        user_info = f'''
+        Пользователь: {request.user.username} ({request.user.email})'''
+        date_info = f"Дата: {today:%Y-%m-%d}"
+        purchases_text = "\n".join([user_info, date_info] + purchases_info)
+
+        # Создаем HTTP-ответ с текстовым документом вложения
+        filename = f"{request.user}_purchases.txt"
+        response = HttpResponse(purchases_text, content_type="text/plain")
+        response["Content-Disposition"] = f"attachment; filename={filename}"
+        return response
+
+    @action(detail=False, permission_classes=[IsAuthenticated])
+    def get(self, request):
+        response = self.download_shopping_cart(request)
+        return response
