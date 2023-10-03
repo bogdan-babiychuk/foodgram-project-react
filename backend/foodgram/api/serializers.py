@@ -9,7 +9,7 @@ from .helper import create_ingredients
 class IngredientSerializer(serializers.ModelSerializer):
     """
     Базовый Сериализатор для ингредиентов
-    http://127.0.0.1:8000/api/v1/ingredients/
+    http://127.0.0.1:8000/api/ingredients/
     """
     class Meta:
         model = Ingredient
@@ -29,7 +29,7 @@ class IngredientCreateRecipeSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     """
     Базовый Сериализатор для тегов.
-    http://127.0.0.1:8000/api/v1/tags/
+    http://127.0.0.1:8000/api/tags/
     """
     class Meta:
         model = Tag
@@ -62,7 +62,7 @@ class IngredientRecipesReadSerializer(serializers.ModelSerializer):
 class RecipeReadSerializer(serializers.ModelSerializer):
     """
     GET запрос для получения объектов модели Recipes
-    http://127.0.0.1:8000/api/v1/recipes/
+    http://127.0.0.1:8000/api/recipes/
     """
     author = UserSerializer(read_only=True)
     ingredients = IngredientRecipesReadSerializer(many=True,
@@ -98,7 +98,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 class RecipeWriteSerializer(serializers.ModelSerializer):
     """
     Запись и обновление объектов модели Recipes
-    http://127.0.0.1:8000/api/v1/recipes/
+    http://127.0.0.1:8000/api/recipes/
     """
     """create/update для рецептов"""
 
