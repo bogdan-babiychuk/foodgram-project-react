@@ -8,8 +8,10 @@ class IsAuthorOrAdminOrReadOnly(permissions.BasePermission):
         для всех пользователей, а также для аутентифицированных пользователей
         для всех остальных методов.
         """
-        return (request.method in permissions.SAFE_METHODS or
-                request.user.is_authenticated)
+        return (
+               request.method in permissions.SAFE_METHODS or
+               request.user.is_authenticated
+               )
 
     def has_object_permission(self, request, view, obj):
         """

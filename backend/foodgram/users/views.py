@@ -25,9 +25,9 @@ class CustomUserViewSet(UserViewSet):
                     author=author
                 )
                 if Follow.objects.filter(
-                    user=user,
-                    author=author
-                     ).exists():
+                                        user=user,
+                                        author=author
+                                        ).exists():
 
                     return Response({
                         'error': 'Нельзя подписаться повторно'
@@ -42,7 +42,9 @@ class CustomUserViewSet(UserViewSet):
 
         elif request.method == 'DELETE':
             follow_delete = Follow.objects.filter(
-                               author=author, user=user).first()
+                                                 author=author,
+                                                 user=user
+                                                 ).first()
             if follow_delete:
                 follow_delete.delete()
                 return Response('Вы отписались',
