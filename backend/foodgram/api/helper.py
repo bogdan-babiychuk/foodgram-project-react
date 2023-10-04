@@ -16,7 +16,7 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
         source='recipes.image',)
     coocking_time = serializers.IntegerField(
         read_only=True,
-        source='recipe.cooking_time',)
+        source='recipes.cooking_time',)
 
     class Meta:
         abstract = True  # Делаем этот класс абстрактным

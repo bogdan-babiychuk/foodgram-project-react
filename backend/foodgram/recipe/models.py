@@ -171,7 +171,7 @@ class Favorite(models.Model):
         return f'{self.recipe}'
 
 
-class List_Of_Purchases(models.Model):
+class ListOfPurchases(models.Model):
     """Модель списка покупок"""
     user = models.ForeignKey(
         User,

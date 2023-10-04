@@ -1,4 +1,4 @@
-from recipe .models import (List_Of_Purchases, IngredientRecipes, Ingredient,
+from recipe .models import (ListOfPurchases, IngredientRecipes, Ingredient,
                             Favorite, Recipes, Tag,)
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -84,15 +84,19 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
-        if not user.is_anonymous:
-            return Favorite.objects.filter(recipe=obj).exists()
-        return False
+        is_favorited = (
+                       not user.is_anonymous and
+                       Favorite.objects.filter(recipe=obj).exists()
+                       )
+        return is_favorited
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
-        if not user.is_anonymous:
-            return List_Of_Purchases.objects.filter(recipe=obj).exists()
-        return False
+        is_in_cart = (
+                     not user.is_anonymous and
+                     ListOfPurchases.objects.filter(recipe=obj).exists()
+                     )
+        return is_in_cart
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
@@ -114,18 +118,13 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, value):
         """Валидация ингредиентов"""
-        ingredients = value
-        if not ingredients:
+        if not value:
             return serializers.ValidationError({'ingredients':
                                                 'Нужно выбрать ингредиент!'})
 
         ingredients_list = []
-        for item in ingredients:
+        for item in value:
             ingredient_id = item.get('id')
-            if not ingredient_id:
-                raise serializers.ValidationError({
-                    'ingredients': 'Каждый ингредиент должен иметь ID!'})
-
             try:
                 ingredient = Ingredient.objects.get(id=ingredient_id)
             except Ingredient.DoesNotExist:
@@ -142,16 +141,15 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def validate_tags(self, value):
         """Валидация тегов"""
-        tags = value
-        if not tags:
+        if not value:
             raise serializers.ValidationError({
                 'tags': 'Нельзя создать рецепт без тега!'})
 
-        if len(tags) != len(set(tags)):
+        if len(value) != len(set(value)):
             raise serializers.ValidationError({
                 'tags': 'Теги не должны повторяться!'})
 
-        return tags
+        return value
 
     def create(self, validated_data):
         """Создание рецепта с помощию доп функции из helper.py """

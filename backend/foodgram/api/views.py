@@ -1,5 +1,5 @@
 from recipe.models import (
-    List_Of_Purchases,
+    ListOfPurchases,
     IngredientRecipes,
     Ingredient,
     Favorite,
@@ -71,14 +71,16 @@ class RecipesViewSet(viewsets.ModelViewSet):
         В удаление, если есть пара юзера и рецепта, то только в таком
         случае можно убрать из избранного.
         """
-        user = request.user
-        if not user.is_authenticated:
+        if not request.user.is_authenticated:
             return Response(
                 {"favorites": "Нужно войти либо создать аккаунт"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         recipe = get_object_or_404(Recipes, id=pk)
-        obj, created = Favorite.objects.get_or_create(user=user, recipe=recipe)
+        _, created = Favorite.objects.get_or_create(
+                                                   user=request.user,
+                                                   recipe=recipe
+                                                   )
 
         if request.method == "POST":
             if not created:
@@ -92,7 +94,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == "DELETE":
-            recipe = Favorite.objects.filter(user=user, recipe__id=pk)
+            recipe = Favorite.objects.filter(user=request.user, recipe__id=pk)
             if recipe.exists():
                 recipe.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -104,15 +106,14 @@ class RecipesViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post", "delete"])
     def shopping_cart(self, request, pk):
         """Та же логика работы, что и при добавлении в избранное"""
-        user = request.user
-        if not user.is_authenticated:
+        if not request.user.is_authenticated:
             return Response(
                 {"shopping_cart": "Требуется аутентификация"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         recipe = get_object_or_404(Recipes, id=pk)
-        cart, created = List_Of_Purchases.objects.get_or_create(
-            user=user, recipe=recipe)
+        _, created = ListOfPurchases.objects.get_or_create(
+            user=request.user, recipe=recipe)
 
         if request.method == "POST":
             if not created:
@@ -126,10 +127,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == "DELETE":
-            if List_Of_Purchases.objects.filter(
-                    user=user, recipe__id=pk).exists():
-                List_Of_Purchases.objects.filter(
-                    user=user, recipe__id=pk).delete()
+            cart_object = ListOfPurchases.objects.filter(
+                                                        user=request.user,
+                                                        recipe__id=pk
+                                                        )
+            if cart_object.exists():
+                cart_object.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
                 {"shopping_cart": "Рецепт не найден в корзине"},
@@ -169,5 +172,4 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def get(self, request):
-        response = self.download_shopping_cart(request)
-        return response
+        return self.download_shopping_cart(request)

@@ -23,8 +23,11 @@ class CustomUserViewSet(UserViewSet):
         user = self.request.user
         if request.method == 'POST':
             if user != author:
-                Follow.objects.get_or_create(user=user, author=author)
-                if Follow.objects.filter(user=user, author=author).exists():
+                follow_object = Follow.objects.get_or_create(
+                                                            user=user,
+                                                            author=author)
+
+                if follow_object.exists():
                     return Response({'error': 'Нельзя подписаться повторно'})
                 serializer_data = FollowSerializer(
                     author, context={'request': request}
@@ -36,9 +39,7 @@ class CustomUserViewSet(UserViewSet):
             return Response({'error': 'Нельзя подписываться на самого себя'})
 
         elif request.method == 'DELETE':
-            follow_delete = Follow.objects.filter(
-                author=author, user=user
-            ).first()
+            follow_delete = follow_object.first()
             if follow_delete:
                 follow_delete.delete()
                 return Response(

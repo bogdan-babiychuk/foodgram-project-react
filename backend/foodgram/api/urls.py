@@ -13,8 +13,6 @@ router.register('recipes', RecipesViewSet, basename='recipes')
 
 
 urlpatterns = [
-    # Все зарегистрированные в router пути доступны в router.urls
-    # Включим их в головной urls.py
     path('', include(router.urls)),
     path('', include("djoser.urls")),
     re_path(r'auth/', include('djoser.urls.authtoken')),

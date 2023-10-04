@@ -35,10 +35,6 @@ class RecipesAdmin(admin.ModelAdmin):
         self.response = super().render_change_form(request, *args, **kwargs)
         return self.response
 
-    # def get_tags(self, obj):
-    #     return ', '.join(tag.title for tag in Teg.objects.all())
-    # get_tags.short_description = 'Теги'
-
 
 admin.site.site_title = 'Administration Foodgram'
 admin.site.site_header = 'Foodgram Admin Panel'
