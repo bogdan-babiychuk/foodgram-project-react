@@ -23,9 +23,8 @@ class CustomUserViewSet(UserViewSet):
         user = self.request.user
         if request.method == 'POST':
             if user != author:
-                follow_object = Follow.objects.get_or_create(
-                                                            user=user,
-                                                            author=author)
+                follow_object = Follow.objects.get_or_create(user=user,
+                                                             author=author)
 
                 if follow_object.exists():
                     return Response({'error': 'Нельзя подписаться повторно'})
