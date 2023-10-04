@@ -79,8 +79,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipes, id=pk)
         _, created = Favorite.objects.get_or_create(
                                                    user=request.user,
-                                                   recipe=recipe
-                                                   )
+                                                   recipe=recipe)
 
         if request.method == "POST":
             if not created:
@@ -129,8 +128,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         if request.method == "DELETE":
             cart_object = ListOfPurchases.objects.filter(
                                                         user=request.user,
-                                                        recipe__id=pk
-                                                        )
+                                                        recipe__id=pk)
             if cart_object.exists():
                 cart_object.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
