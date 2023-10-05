@@ -137,7 +137,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        # Получаем ингредиенты и их сумму для покупок пользователя
         ingredients = (
             IngredientRecipes.objects
             .filter(recipe__purchases__user=request.user)
@@ -145,7 +144,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
             .annotate(amount=Sum("amount"))
         )
 
-        # Создаем строку с информацией о покупках
         today = datetime.today()
         purchases_info = [
             f'- {ingredient["ingredient__name"]} - {ingredient["amount"]} '
@@ -153,14 +151,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
             for ingredient in ingredients
         ]
 
-        # Создаем текстовый документ с информацией о покупках
         user_info = (
             f'Пользователь: {request.user.username} ({request.user.email})'
         )
         date_info = f"Дата: {today:%Y-%m-%d}"
         purchases_text = "\n".join([user_info, date_info] + purchases_info)
 
-        # Создаем HTTP-ответ с текстовым документом вложения
         filename = f"{request.user}_purchases.txt"
         response = HttpResponse(purchases_text, content_type="text/plain")
         response["Content-Disposition"] = f"attachment; filename={filename}"
