@@ -29,7 +29,7 @@ password: 243245
 ```
 ### Сервис доступен по домену:
 ```
-https://face-food.ddns.net
+https://foodgrams.ddnsking.net
 ```
 
 ## Автор
