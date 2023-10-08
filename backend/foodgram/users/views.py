@@ -21,12 +21,12 @@ class CustomUserViewSet(UserViewSet):
     def subscribe(self, request, **kwargs):
         author = get_object_or_404(User, id=self.kwargs.get('id'))
         user = self.request.user
+        follow_instance, created = Follow.objects.get_or_create(user=user,
+                                                                author=author)
+
         if request.method == 'POST':
             if user != author:
-                follow_object = Follow.objects.get_or_create(user=user,
-                                                             author=author)
-
-                if follow_object.exists():
+                if not created:
                     return Response({'error': 'Нельзя подписаться повторно'})
                 serializer_data = FollowSerializer(
                     author, context={'request': request}
@@ -38,9 +38,8 @@ class CustomUserViewSet(UserViewSet):
             return Response({'error': 'Нельзя подписываться на самого себя'})
 
         elif request.method == 'DELETE':
-            follow_delete = follow_object.first()
-            if follow_delete:
-                follow_delete.delete()
+            if follow_instance:
+                follow_instance.delete()
                 return Response(
                     'Вы отписались',
                     status=status.HTTP_204_NO_CONTENT
