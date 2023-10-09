@@ -87,12 +87,12 @@ class IngredientRecipes(models.Model):
         verbose_name='Ингредиенты'
     )
 
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0.5,
+    amount = models.PositiveIntegerField(
+        default=1,
         verbose_name='Количество',
-        null=True
+        null=True,
+        validators=[MinValueValidator(1,
+                    message='Количество должно быть больше или равно 1')]
     )
 
     def __str__(self):

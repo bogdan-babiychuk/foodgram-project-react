@@ -19,6 +19,11 @@ class IngredientCreateRecipeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
 
+    def validate_amount(self, value):
+        if value == 0:
+            raise ValidationError("Количество не может быть равно 0.")
+        return value
+
     class Meta:
         model = IngredientRecipes
         fields = ('id', 'amount',)
@@ -90,6 +95,12 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipes
         fields = '__all__'
+
+    def validate_image(self, value):
+        """Валидация изображения"""
+        if not value:
+            raise ValidationError("Поле изображения не может быть пустым")
+        return value
 
     def validate_ingredients(self, value):
         if not value:
